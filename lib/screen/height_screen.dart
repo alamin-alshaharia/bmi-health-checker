@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
+import 'dart:math' as math;
 import 'package:wheel_slider/wheel_slider.dart';
 
 import '../constant/color/color.dart';
@@ -7,7 +11,6 @@ import '../widget/button.dart';
 import '../widget/custom_box.dart';
 
 class HeightScreen extends StatefulWidget {
-
   const HeightScreen({super.key});
 
   @override
@@ -37,8 +40,8 @@ class _HeightScreenState extends State<HeightScreen> {
     final List<double> stops = [0.0, fillStop, fillStop, 1.0];
     return SafeArea(
       child: Scaffold(
-        body: Column(
-          children: [
+          backgroundColor: kBacgroundColor,
+          body: Column(children: [
             Padding(
               padding: EdgeInsets.all(17.0),
               child: Row(
@@ -57,90 +60,103 @@ class _HeightScreenState extends State<HeightScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 90),
-            Text(
-              'Select Weight ',
-              style: buildTextStyle(weight: FontWeight.w500, fontSize: 28),
-            ),
-            SizedBox(height: 10),
-            Text(
-              _currentValue.toString(),
-              style: buildTextStyle(weight: FontWeight.bold, fontSize: 60),
-            ),
-            SizedBox(height: 10),
-            Container(
-              alignment: Alignment.center,
-              height: 60,
-              width: 140,
-              decoration: BoxDecoration(
-                color: kInactiveColor,
-                borderRadius: BorderRadius.all(
-                  Radius.circular(50),
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 30),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 90),
+                      Text(
+                        'Select Height ',
+                        style:
+                            buildTextStyle(weight: FontWeight.w500, fontSize: 28),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        _currentValue.toString(),
+                        style:
+                            buildTextStyle(weight: FontWeight.bold, fontSize: 60),
+                      ),
+                      SizedBox(height: 10),
+                      Container(
+                        alignment: Alignment.center,
+                        height: 60,
+                        width: 140,
+                        decoration: BoxDecoration(
+                          color: kInactiveColor,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(50),
+                          ),
+                        ),
+                        child: DropdownButton<String>(
+                            dropdownColor: kInactiveColor,
+                            alignment: Alignment.center,
+                            value: selectedMenu,
+                            items: [
+                              DropdownMenuItem(
+                                child: Text(
+                                  "KG",
+                                  style: buildTextStyle(
+                                      weight: FontWeight.w500, fontSize: 15),
+                                ),
+                                value: 'KG',
+                              ),
+                              DropdownMenuItem(
+                                child: Text(
+                                  'Metric',
+                                  style: buildTextStyle(
+                                      weight: FontWeight.w500, fontSize: 15),
+                                ),
+                                value: 'Metric',
+                              ),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                selectedMenu = value!;
+                              });
+                            }),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              child: DropdownButton<String>(
-                  dropdownColor: kInactiveColor,
-                  alignment: Alignment.center,
-                  value: selectedMenu,
-                  items: [
-                    DropdownMenuItem(
-                      child: Text(
-                        "KG",
-                        style:
-                        buildTextStyle(weight: FontWeight.w500, fontSize: 15),
+                RotatedBox(quarterTurns: 1,
+                  child: Container(
+
+                    height: 120,
+                    width: 370,
+                    decoration: BoxDecoration(
+                        color: kInactiveColor,
+                        gradient: LinearGradient(
+                          colors: gradient,
+                          stops: stops,
+                          end: Alignment.center,
+                          begin: Alignment.centerLeft,
+                        ),
+                        borderRadius: BorderRadius.circular(30)),
+                    child: Center(
+                      child: CustomBox(
+                        wheelSlider: WheelSlider(
+                          lineColor: kActiveColor,
+                          horizontalListWidth: 340,
+                          horizontalListHeight: 500,
+                          totalCount: _totalCount,
+                          initValue: _initValue,
+                          onValueChanged: (val) {
+                            setState(() {
+                              _currentValue = val;
+                            });
+                          },
+                          hapticFeedbackType: HapticFeedbackType.vibrate,
+                          pointerColor: Colors.blueAccent,
+                        ),
                       ),
-                      value: 'KG',
                     ),
-                    DropdownMenuItem(
-                      child: Text(
-                        'Metric',
-                        style:
-                        buildTextStyle(weight: FontWeight.w500, fontSize: 15),
-                      ),
-                      value: 'Metric',
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedMenu = value!;
-                    });
-                  }),
+                  ),
+                )
+              ],
             ),
 
-            SizedBox(
-              height: 50,
-            ),
-            Container(
-              height: 120,
-              width: 370,
-              decoration: BoxDecoration(
-                  color: kInactiveColor,
-                  gradient: LinearGradient(
-                    colors: gradient,
-                    stops: stops,
-                    end: Alignment.center,
-                    begin: Alignment.centerLeft,
-                  ),
-                  borderRadius: BorderRadius.circular(30)),
-              child: Center(
-                child: CustomBox(
-                  wheelSlider: WheelSlider(
-                    lineColor: kActiveColor,
-                    horizontalListWidth: 340,
-                    horizontalListHeight: 500,
-                    totalCount: _totalCount,
-                    initValue: _initValue,
-                    onValueChanged: (val) {
-                      setState(() {
-                        _currentValue = val;
-                      });
-                    },
-                    hapticFeedbackType: HapticFeedbackType.vibrate,
-                    pointerColor: Colors.blueAccent,
-                  ),
-                ),
-              ),
-            ),
             SizedBox(
               height: 180,
             ),
@@ -162,9 +178,7 @@ class _HeightScreenState extends State<HeightScreen> {
               ],
             ),
             // Text(_nCurrentValue.toString(),style: TextStyle(color: kActiveColor),),
-          ])
-        ),
-
+          ])),
     );
   }
 }
