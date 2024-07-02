@@ -1,12 +1,16 @@
+import 'package:bmi_calclutor/widget/custom_box.dart';
 import 'package:flutter/material.dart';
 import 'package:wheel_slider/wheel_slider.dart';
+
+import '../Calculator.dart';
 import '../constant/color/color.dart';
 import '../constant/text_style.dart';
 import '../widget/button.dart';
-import 'package:bmi_calclutor/widget/custom_box.dart';
 
 class WeightScreen extends StatefulWidget {
-  const WeightScreen({super.key});
+  const WeightScreen({
+    super.key,
+  });
 
   @override
   State<WeightScreen> createState() => _WeightScreenState();
@@ -18,10 +22,13 @@ class _WeightScreenState extends State<WeightScreen> {
 
   final int _totalCount = 200;
   final int _initValue = 50;
-  int _currentValue = 50;
-
+  int weight = 50;
 
   Widget build(BuildContext context) {
+    final arguments = (ModalRoute.of(context)?.settings.arguments ??
+        <String, dynamic>{}) as Map;
+    Calculator calc = Calculator(height: arguments["height"], weight: weight);
+
     final Color background = kInactiveColor;
     final Color fill = kScaleColor;
     final List<Color> gradient = [
@@ -62,9 +69,13 @@ class _WeightScreenState extends State<WeightScreen> {
         ),
         SizedBox(height: 10),
         Text(
-          _currentValue.toString(),
+          weight.toStringAsFixed(2),
           style: buildTextStyle(weight: FontWeight.bold, fontSize: 60),
         ),
+        // Text(
+        //   arguments["height"].toString(),
+        //   style: buildTextStyle(weight: FontWeight.bold, fontSize: 60),
+        // ),
         SizedBox(height: 10),
         Container(
           alignment: Alignment.center,
@@ -91,11 +102,11 @@ class _WeightScreenState extends State<WeightScreen> {
                 ),
                 DropdownMenuItem(
                   child: Text(
-                    'Metric',
+                    'Pound',
                     style:
                         buildTextStyle(weight: FontWeight.w500, fontSize: 15),
                   ),
-                  value: 'Metric',
+                  value: "Pound",
                 ),
               ],
               onChanged: (value) {
@@ -130,7 +141,7 @@ class _WeightScreenState extends State<WeightScreen> {
                 initValue: _initValue,
                 onValueChanged: (val) {
                   setState(() {
-                    _currentValue = val;
+                    weight = val;
                   });
                 },
                 hapticFeedbackType: HapticFeedbackType.vibrate,
@@ -146,12 +157,18 @@ class _WeightScreenState extends State<WeightScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Button(
+                values: null,
                 textColor: kActiveColor,
                 context: context,
                 label: "Prev",
-                routeName: "weight_screen",
+                routeName: "height_screen",
                 color: kInactiveColor),
             Button(
+                values: {
+                  "bmi": calc.bmiValue().toDouble(),
+                  "bmiText": calc.bmiText(),
+                  "bmiInterpretation": calc.bmiInterpretaion()
+                },
                 textColor: Colors.black,
                 context: context,
                 label: "Next",

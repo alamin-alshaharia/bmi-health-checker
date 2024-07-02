@@ -1,16 +1,11 @@
-import 'dart:ui';
-
 import 'package:bmi_calclutor/constant/color/color.dart';
-import 'package:flutter/animation.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:bmi_calclutor/constant/enum_gender_file.dart';
+import 'package:flutter/material.dart';
 
 import '../constant/text_style.dart';
 import '../widget/button.dart';
-class GenderScreen extends StatefulWidget {
 
+class GenderScreen extends StatefulWidget {
   const GenderScreen({super.key});
 
   @override
@@ -19,7 +14,6 @@ class GenderScreen extends StatefulWidget {
 
 class _GenderScreenState extends State<GenderScreen> {
   @override
-
   Color maleCardColor = kInactiveColor;
   Color femaleCardColor = kInactiveColor;
   Color transgenderCardColor = kInactiveColor;
@@ -81,12 +75,13 @@ class _GenderScreenState extends State<GenderScreen> {
           ),
           Text(
             "Select gender",
-            style: buildTextStyle(fontSize: 30,weight: FontWeight.w500),
+            style: buildTextStyle(fontSize: 30, weight: FontWeight.w500),
           ),
-          SizedBox(height: 25,),
+          SizedBox(
+            height: 25,
+          ),
           GestureDetector(
-              onTap: () =>
-                  setState(() {
+              onTap: () => setState(() {
                     selectedGender = gender.male;
                     updateCardColor();
                   }),
@@ -96,9 +91,9 @@ class _GenderScreenState extends State<GenderScreen> {
                 cardColor: maleCardColor,
                 textColor: maleTextColor,
                 iconColor: maleTextColor,
-              )), GestureDetector(
-              onTap: () =>
-                  setState(() {
+              )),
+          GestureDetector(
+              onTap: () => setState(() {
                     selectedGender = gender.female;
                     updateCardColor();
                   }),
@@ -108,40 +103,46 @@ class _GenderScreenState extends State<GenderScreen> {
                 cardColor: femaleCardColor,
                 textColor: femaleTextColor,
                 iconColor: femaleTextColor,
-              )), GestureDetector(
-              onTap: () =>
-                  setState(() {
+              )),
+          GestureDetector(
+              onTap: () => setState(() {
                     selectedGender = gender.transgender;
                     updateCardColor();
                   }),
               child: GenderContainer(
                 iconColor: transgenderTextColor,
-                label: 'Transgender',
+                label: 'Others',
                 gendericon: Icons.transgender,
                 cardColor: transgenderCardColor,
                 textColor: transgenderTextColor,
               )),
-
           SizedBox(
             height: 20,
           ),
-          Button(context: context, label: "Next",routeName:"height_screen", color: kActiveColor,textColor: Colors.black)
+          Button(
+              context: context,
+              label: "Next",
+              routeName: "height_screen",
+              color: kActiveColor,
+              textColor: Colors.black)
         ]),
       ),
     );
   }
-
-
 }
 
 class GenderContainer extends StatelessWidget {
   String label;
   IconData gendericon;
-Color cardColor;
-Color textColor;
-Color iconColor;
+  Color cardColor;
+  Color textColor;
+  Color iconColor;
   GenderContainer(
-      {required this.label, required this.gendericon, required this.cardColor,required this.textColor,required this.iconColor});
+      {required this.label,
+      required this.gendericon,
+      required this.cardColor,
+      required this.textColor,
+      required this.iconColor});
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -165,13 +166,15 @@ Color iconColor;
             Text(
               label,
               style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Poppins",
-              color: textColor,),
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Poppins",
+                color: textColor,
+              ),
             )
           ],
         ),
       ),
     );
-  }}
+  }
+}

@@ -1,8 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
-import 'dart:math' as math;
 import 'package:wheel_slider/wheel_slider.dart';
 
 import '../constant/color/color.dart';
@@ -18,11 +14,13 @@ class HeightScreen extends StatefulWidget {
 }
 
 class _HeightScreenState extends State<HeightScreen> {
-  String selectedMenu = "KG";
+  String selectedMenu = "Feet";
 
-  final int _totalCount = 200;
-  final int _initValue = 50;
-  int _currentValue = 50;
+  final _totalCount = 200;
+  final double _initValue = 0;
+  double height = 4.5;
+  double interval = 0.1;
+  // double _interval_value= double.parse(interval);
 
   List<String> dropdown = ["Feet", "Inch"];
   @override
@@ -63,20 +61,22 @@ class _HeightScreenState extends State<HeightScreen> {
             Row(
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 30),
+                  padding: const EdgeInsets.only(left: 35),
                   child: Column(
                     children: [
                       SizedBox(height: 90),
                       Text(
                         'Select Height ',
-                        style:
-                            buildTextStyle(weight: FontWeight.w500, fontSize: 28),
+                        style: buildTextStyle(
+                            weight: FontWeight.w300, fontSize: 27),
                       ),
                       SizedBox(height: 10),
                       Text(
-                        _currentValue.toString(),
-                        style:
-                            buildTextStyle(weight: FontWeight.bold, fontSize: 60),
+                        height.toStringAsFixed(1),
+                        style: buildTextStyle(
+                          weight: FontWeight.bold,
+                          fontSize: 80,
+                        ),
                       ),
                       SizedBox(height: 10),
                       Container(
@@ -96,19 +96,27 @@ class _HeightScreenState extends State<HeightScreen> {
                             items: [
                               DropdownMenuItem(
                                 child: Text(
-                                  "KG",
+                                  "Feet",
                                   style: buildTextStyle(
                                       weight: FontWeight.w500, fontSize: 15),
                                 ),
-                                value: 'KG',
+                                value: 'Feet',
                               ),
                               DropdownMenuItem(
                                 child: Text(
-                                  'Metric',
+                                  'Inch',
                                   style: buildTextStyle(
                                       weight: FontWeight.w500, fontSize: 15),
                                 ),
-                                value: 'Metric',
+                                value: 'Inch',
+                              ),
+                              DropdownMenuItem(
+                                child: Text(
+                                  'M',
+                                  style: buildTextStyle(
+                                      weight: FontWeight.w500, fontSize: 15),
+                                ),
+                                value: 'Cm',
                               ),
                             ],
                             onChanged: (value) {
@@ -120,35 +128,39 @@ class _HeightScreenState extends State<HeightScreen> {
                     ],
                   ),
                 ),
-                RotatedBox(quarterTurns: 1,
-                  child: Container(
-
-                    height: 120,
-                    width: 370,
-                    decoration: BoxDecoration(
-                        color: kInactiveColor,
-                        gradient: LinearGradient(
-                          colors: gradient,
-                          stops: stops,
-                          end: Alignment.center,
-                          begin: Alignment.centerLeft,
-                        ),
-                        borderRadius: BorderRadius.circular(30)),
-                    child: Center(
-                      child: CustomBox(
-                        wheelSlider: WheelSlider(
-                          lineColor: kActiveColor,
-                          horizontalListWidth: 340,
-                          horizontalListHeight: 500,
-                          totalCount: _totalCount,
-                          initValue: _initValue,
-                          onValueChanged: (val) {
-                            setState(() {
-                              _currentValue = val;
-                            });
-                          },
-                          hapticFeedbackType: HapticFeedbackType.vibrate,
-                          pointerColor: Colors.blueAccent,
+                Padding(
+                  padding: const EdgeInsets.only(left: 31, top: 35),
+                  child: RotatedBox(
+                    quarterTurns: 3,
+                    child: Container(
+                      height: 102,
+                      width: 550,
+                      decoration: BoxDecoration(
+                          color: kInactiveColor,
+                          gradient: LinearGradient(
+                            colors: gradient,
+                            stops: stops,
+                            end: Alignment.center,
+                            begin: Alignment.centerLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(30)),
+                      child: Center(
+                        child: CustomBox(
+                          wheelSlider: WheelSlider(
+                            lineColor: kActiveColor,
+                            horizontalListWidth: 490,
+                            horizontalListHeight: 500,
+                            interval: interval,
+                            totalCount: _totalCount,
+                            initValue: _initValue,
+                            onValueChanged: (val) {
+                              setState(() {
+                                height = val;
+                              });
+                            },
+                            hapticFeedbackType: HapticFeedbackType.vibrate,
+                            pointerColor: Colors.blueAccent,
+                          ),
                         ),
                       ),
                     ),
@@ -156,9 +168,8 @@ class _HeightScreenState extends State<HeightScreen> {
                 )
               ],
             ),
-
             SizedBox(
-              height: 180,
+              height: 37,
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -167,17 +178,24 @@ class _HeightScreenState extends State<HeightScreen> {
                     textColor: kActiveColor,
                     context: context,
                     label: "Prev",
-                    routeName: "weight_screen",
+                    routeName: "gender_screen",
                     color: kInactiveColor),
                 Button(
+                    values: {
+                      "height": (selectedMenu == "Inch"
+                              ? height * 2.54
+                              : selectedMenu == "Feet"
+                                  ? height * 30.48
+                                  : height * 100)
+                          .toDouble()
+                    },
                     textColor: Colors.black,
                     context: context,
                     label: "Next",
-                    routeName: "result_screen",
+                    routeName: "weight_screen",
                     color: kActiveColor)
               ],
             ),
-            // Text(_nCurrentValue.toString(),style: TextStyle(color: kActiveColor),),
           ])),
     );
   }
