@@ -167,7 +167,7 @@ class _WeightScreenState extends State<WeightScreen> {
                 values: {
                   "bmi": calc.bmiValue().toDouble(),
                   "bmiText": calc.bmiText(),
-                  "bmiInterpretation": calc.bmiInterpretaion()
+                  "bmiInterpretation": calc.bmiInterpretation()
                 },
                 textColor: Colors.black,
                 context: context,

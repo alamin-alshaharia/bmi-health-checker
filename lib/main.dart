@@ -2,6 +2,7 @@ import 'package:bmi_calclutor/screen/gender_screen.dart';
 import 'package:bmi_calclutor/screen/height_screen.dart';
 import 'package:bmi_calclutor/screen/result_screen.dart';
 import 'package:bmi_calclutor/screen/weight_screen.dart';
+import 'package:bmi_calclutor/screen/history_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,17 +16,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
       initialRoute: "height_screen",
-      routes:{
-  "gender_screen":(context) => GenderScreen(),
-        "height_screen":(context) => HeightScreen(),
-        "weight_screen":(context) => WeightScreen(),
-        "result_screen":(context) => ResultScreen(),
-
-
-      } ,
+      routes: {
+        "gender_screen": (context) => GenderScreen(),
+        "height_screen": (context) => HeightScreen(),
+        "weight_screen": (context) => WeightScreen(),
+        "result_screen": (context) => ResultScreen(),
+        "history_screen": (context) => const HistoryScreen(),
+      },
     );
   }
 }
-

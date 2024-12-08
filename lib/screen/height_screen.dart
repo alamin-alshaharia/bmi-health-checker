@@ -40,7 +40,7 @@ class _HeightScreenState extends State<HeightScreen> {
       child: Scaffold(
           backgroundColor: kBacgroundColor,
           body: Column(children: [
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(17.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,13 +64,13 @@ class _HeightScreenState extends State<HeightScreen> {
                   padding: const EdgeInsets.only(left: 35),
                   child: Column(
                     children: [
-                      SizedBox(height: 90),
+                      const SizedBox(height: 90),
                       Text(
                         'Select Height ',
                         style: buildTextStyle(
                             weight: FontWeight.w300, fontSize: 27),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
                         height.toStringAsFixed(1),
                         style: buildTextStyle(
@@ -78,12 +78,12 @@ class _HeightScreenState extends State<HeightScreen> {
                           fontSize: 80,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Container(
                         alignment: Alignment.center,
                         height: 60,
                         width: 140,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: kInactiveColor,
                           borderRadius: BorderRadius.all(
                             Radius.circular(50),
@@ -168,7 +168,7 @@ class _HeightScreenState extends State<HeightScreen> {
                 )
               ],
             ),
-            SizedBox(
+            const SizedBox(
               height: 37,
             ),
             Row(

@@ -55,7 +55,7 @@ class _GenderScreenState extends State<GenderScreen> {
       backgroundColor: kBacgroundColor,
       body: SafeArea(
         child: Column(children: [
-          Padding(
+          const Padding(
             padding: EdgeInsets.all(17.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -77,7 +77,7 @@ class _GenderScreenState extends State<GenderScreen> {
             "Select gender",
             style: buildTextStyle(fontSize: 30, weight: FontWeight.w500),
           ),
-          SizedBox(
+          const SizedBox(
             height: 25,
           ),
           GestureDetector(
@@ -116,7 +116,7 @@ class _GenderScreenState extends State<GenderScreen> {
                 cardColor: transgenderCardColor,
                 textColor: transgenderTextColor,
               )),
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
           Button(
@@ -152,7 +152,7 @@ class GenderContainer extends StatelessWidget {
         height: 173,
         width: 173,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(70)),
+          borderRadius: const BorderRadius.all(Radius.circular(70)),
           color: cardColor,
         ),
         child: Column(
