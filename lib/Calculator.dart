@@ -2,15 +2,14 @@ import 'dart:math';
 
 class Calculator {
   double height; // height in centimeters
-  int weight; // weight in kilograms
+  double weight; // weight in kilograms
   late double _bmi;
 
   Calculator({required this.height, required this.weight});
 
   double bmiValue() {
-    // Original formula: BMI = weight / (height in meters)²
-    // Since height is in cm, we multiply by 10000 to convert (height/100)² to meters
-    return _bmi = (weight / (pow(height, 2))) * 10000;
+    print('Calculating BMI with Height: $height cm, Weight: $weight kg');
+    return _bmi = (weight / (pow(height / 100, 2)));
   }
 
   String bmiText() {

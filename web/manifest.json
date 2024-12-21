@@ -1,6 +1,6 @@
 {
-    "name": "bmi_calclutor",
-    "short_name": "bmi_calclutor",
+    "name": "bmi_health_checker",
+    "short_name": "bmi_health_checker",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
