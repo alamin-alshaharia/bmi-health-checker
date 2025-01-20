@@ -7,12 +7,12 @@ class Button extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const Button({
-    Key? key,
+    super.key,
     required this.label,
     required this.color,
     required this.textColor,
     this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +21,11 @@ class Button extends StatelessWidget {
       style: ElevatedButton.styleFrom(
           textStyle: TextStyle(color: textColor),
           backgroundColor: color,
-          fixedSize: Size(150, 60)),
+          fixedSize: const Size(150, 60)),
       child: Text(
         label,
-        style: TextStyle(color: textColor),
+        style: TextStyle(
+            color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
       ),
     );
   }

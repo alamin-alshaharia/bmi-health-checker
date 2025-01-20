@@ -1,8 +1,10 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'ad_constants.dart';
+import 'package:flutter/foundation.dart';
 
 class RewardedAdManager {
   RewardedAd? _rewardedAd;
+  bool _isLoading = false;
 
   RewardedAdManager() {
     _loadRewardedAd();
@@ -11,15 +13,15 @@ class RewardedAdManager {
   void _loadRewardedAd() {
     RewardedAd.load(
       adUnitId: AdConstants.rewardedAdUnitId,
-      request: AdRequest(),
+      request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
           _rewardedAd = ad;
-          print('RewardedAd loaded successfully');
+          // print('RewardedAd loaded successfully');
           _setRewardedAdCallbacks(ad);
         },
         onAdFailedToLoad: (LoadAdError error) {
-          print('RewardedAd failed to load: $error');
+          // print('RewardedAd failed to load: $error');
         },
       ),
     );
@@ -28,33 +30,55 @@ class RewardedAdManager {
   void _setRewardedAdCallbacks(RewardedAd ad) {
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
-        print('RewardedAd shown.');
+        // print('RewardedAd shown.');
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         ad.dispose();
         _loadRewardedAd(); // Load a new ad for next time
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        print('RewardedAd failed to show: $error');
+        // print('RewardedAd failed to show: $error');
         ad.dispose();
         _loadRewardedAd(); // Load a new ad for next time
       },
     );
   }
 
-  void showAd(Function onRewarded) {
-    if (_rewardedAd != null) {
-      _rewardedAd!.show(
-          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        print('User earned a reward: ${reward.amount} ${reward.type}');
-        onRewarded(); // Call the reward function
-      });
-    } else {
-      print('RewardedAd is not ready yet.');
+  void showAd(VoidCallback onRewarded, {VoidCallback? onAdFailedToLoad}) {
+    if (_rewardedAd == null) {
+      onAdFailedToLoad?.call();
+      return;
     }
+
+    _rewardedAd!.show(
+      onUserEarnedReward: (_, reward) {
+        onRewarded();
+      },
+    );
   }
 
   void dispose() {
     _rewardedAd?.dispose();
+  }
+
+  void loadAd() {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    RewardedAd.load(
+      adUnitId: AdConstants.rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedAd = ad;
+          _isLoading = false;
+        },
+        onAdFailedToLoad: (error) {
+          // print('Rewarded ad failed to load: $error');
+          _rewardedAd = null;
+          _isLoading = false;
+        },
+      ),
+    );
   }
 }

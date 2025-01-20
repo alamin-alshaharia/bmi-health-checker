@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:bmi_health_checker/screen/gender_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -8,17 +11,21 @@ import 'package:bmi_health_checker/widget/interstitial_ad_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Import connectivity package
 import '../ads/rewarded_ad_manager.dart';
 import '../constant/color/color.dart'; // Import color constants
-import '../constant/text_style.dart'; // Import text styles
+import '../models/bmi_history_state.dart';
+import '../providers/bmi_history_provider.dart';
+import '../providers/ad_provider.dart'; // Add this import
+import '../utils/preferences_manager.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class ResultScreen extends StatefulWidget {
+class ResultScreen extends ConsumerStatefulWidget {
   const ResultScreen({super.key});
 
   @override
-  State<ResultScreen> createState() => _ResultScreenState();
+  ConsumerState<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> {
-  final RewardedAdManager _rewardedAdManager = RewardedAdManager();
+class _ResultScreenState extends ConsumerState<ResultScreen> {
+  late final RewardedAdManager _rewardedAdManager;
   ConnectivityResult _connectivityResult = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
@@ -26,13 +33,8 @@ class _ResultScreenState extends State<ResultScreen> {
   @override
   void initState() {
     super.initState();
+    _rewardedAdManager = ref.read(rewardedAdProvider);
     _initializeConnectivity();
-  }
-
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
   }
 
   Future<void> _initializeConnectivity() async {
@@ -41,16 +43,109 @@ class _ResultScreenState extends State<ResultScreen> {
       setState(() {
         _connectivityResult = result.first;
       });
+      _handleConnectivityChange(result.first);
 
       _connectivitySubscription = _connectivity.onConnectivityChanged
           .listen((List<ConnectivityResult> results) {
         setState(() {
           _connectivityResult = results.first;
         });
+        _handleConnectivityChange(results.first);
       });
     } catch (e) {
-      print('Connectivity initialization error: $e');
+      // print('Connectivity initialization error: $e');
     }
+  }
+
+  void _handleConnectivityChange(ConnectivityResult result) {
+    if (result != ConnectivityResult.none) {
+      // Only load initial ad when internet connects
+      _rewardedAdManager.loadAd();
+      // print('Internet connected - Loading initial rewarded ad');
+    } else {
+      // print('No internet connection');
+    }
+  }
+
+  Future<void> _showFeatureLockedDialog(VoidCallback onProceed) async {
+    final canUseFeature = await PreferencesManager.canUseSaveShareFeature();
+
+    if (canUseFeature) {
+      onProceed();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: kBacgroundColor,
+        title: const Text(
+          'Feature Locked',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'To use this feature, you need to watch a short video ad. After watching, you\'ll have access to this feature for 24 hours.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (_connectivityResult == ConnectivityResult.none) {
+                _showNoInternetDialog();
+                return;
+              }
+
+              _rewardedAdManager.showAd(
+                () {
+                  PreferencesManager.updateSaveShareRewardTime();
+                  onProceed();
+                  _rewardedAdManager.loadAd();
+                },
+                onAdFailedToLoad: () {
+                  _showRewardAdFailedDialog();
+                },
+              );
+            },
+            child: const Text('Watch Ad'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleSaveButton(double bmi, String bmiText, String interpretation,
+      String gender, double height, double weight) {
+    _showFeatureLockedDialog(() {
+      final entry = BmiHistoryEntry(
+        bmi: bmi,
+        status: bmiText,
+        gender: gender,
+        height: height,
+        weight: weight,
+        date: DateTime.now(),
+      );
+      ref.read(bmiHistoryProvider.notifier).addEntry(entry);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('BMI result saved successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    });
+  }
+
+  void _handleShareButton(double bmi, String bmiText, String interpretation) {
+    _showFeatureLockedDialog(() {
+      Share.share(
+        'My BMI Result:\nBMI: ${bmi.toStringAsFixed(1)}\nCategory: $bmiText\n$interpretation',
+        subject: 'My BMI Result',
+      );
+    });
   }
 
   @override
@@ -58,66 +153,61 @@ class _ResultScreenState extends State<ResultScreen> {
     final arguments = (ModalRoute.of(context)?.settings.arguments ??
         <String, dynamic>{}) as Map;
 
-    // Extract arguments with null checks
-    var bmi = arguments["bmi"] ?? 0.0; // Default to 0.0 if null
-    var bmiText = arguments["bmiText"] ?? "Unknown"; // Default to "Unknown"
-    var bmiInterpretation = arguments["bmiInterpretation"] ??
-        "No interpretation available"; // Default message
-    var gender =
-        arguments["gender"] ?? "Not specified"; // Default to "Not specified"
-    var height = arguments["height"] ?? 0.0; // Default to 0.0 if null
-    var weight = arguments["weight"] ?? 0.0; // Default to 0.0 if null
-
-    // Debugging print statements
-    print(
-        'BMI: $bmi, BMI Text: $bmiText, Interpretation: $bmiInterpretation, Gender: $gender, Height: $height, Weight: $weight');
+    var bmi = arguments["bmi"] ?? 0.0;
+    var bmiText = arguments["bmiText"] ?? "Unknown";
+    var bmiInterpretation =
+        arguments["bmiInterpretation"] ?? "No interpretation available";
+    var gender = arguments["gender"] ?? "Not specified";
+    var height = arguments["height"] ?? 0.0;
+    var weight = arguments["weight"] ?? 0.0;
 
     return InterstitialAdWidget(
       child: Scaffold(
-        backgroundColor: kBacgroundColor, // Use consistent background color
+        backgroundColor: kBacgroundColor,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                // Header
+                SizedBox(height: 20.h),
                 Row(
                   children: [
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.grey[850],
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new,
-                            color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                          size: 24.r,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Center(
                         child: Text(
                           'YOUR RESULT',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48), // For balance
+                    SizedBox(width: 48.w),
                   ],
                 ),
-
-                const SizedBox(height: 40),
-
-                // Main Result Card
+                SizedBox(height: 40.h),
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20.r),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -127,7 +217,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           Colors.grey[850]!,
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(24.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.3),
@@ -143,60 +233,56 @@ class _ResultScreenState extends State<ResultScreen> {
                           bmiText.toUpperCase(),
                           style: TextStyle(
                             color: getStatusColor(bmi),
-                            fontSize: 24,
+                            fontSize: 24.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20.h),
                         Text(
-                          bmi.toStringAsFixed(1),
-                          style: const TextStyle(
+                          bmi.toStringAsFixed(2),
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 80,
+                            fontSize: 80.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'BMI',
                           style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 20,
+                            fontSize: 20.sp,
                           ),
                         ),
-                        const SizedBox(height: 30),
-
-                        // BMI Indicator Bar
+                        SizedBox(height: 30.h),
                         Stack(
                           children: [
                             Container(
-                              height: 8,
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                              height: 8.h,
+                              margin: EdgeInsets.symmetric(horizontal: 20.w),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(4.r),
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF3B82F6), // Blue
-                                    Color(0xFF22C55E), // Green
-                                    Color(0xFFF97316), // Orange
-                                    Color(0xFFEF4444), // Red
+                                    Color(0xFF3B82F6),
+                                    Color(0xFF22C55E),
+                                    Color(0xFFF97316),
+                                    Color(0xFFEF4444),
                                   ],
                                 ),
                               ),
                             ),
-                            // Indicator
                             Positioned(
-                              left: 20 +
+                              left: 20.w +
                                   (MediaQuery.of(context).size.width - 40) *
                                       getIndicatorPosition(bmi),
                               child: Transform.translate(
                                 offset: const Offset(-1.5, -3),
                                 child: Container(
-                                  width: 3,
-                                  height: 14,
+                                  width: 3.w,
+                                  height: 14.h,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(1.5),
+                                    borderRadius: BorderRadius.circular(1.5.r),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.3),
@@ -210,21 +296,19 @@ class _ResultScreenState extends State<ResultScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 30),
-
-                        // Interpretation
+                        SizedBox(height: 30.h),
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20.r),
                           decoration: BoxDecoration(
                             color: Colors.black26,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                           child: Text(
                             bmiInterpretation,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               height: 1.5,
                             ),
                           ),
@@ -233,49 +317,41 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Action Buttons
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildActionButton(
                       icon: Icons.share,
                       label: 'Share',
-                      onTap: () async {
-                        // Check for internet connectivity
-                        if (_connectivityResult == ConnectivityResult.none) {
-                          _showNoInternetDialog();
-                        } else {
-                          _rewardedAdManager.showAd(() {
-                            // Save the result after the ad is watched
-                            _shareResult(bmi, bmiText, bmiInterpretation,
-                                height, weight);
-                          });
-                        }
-                      },
+                      onTap: () => _handleShareButton(
+                        bmi,
+                        bmiText,
+                        bmiInterpretation,
+                      ),
                     ),
                     _buildActionButton(
                       icon: Icons.refresh,
                       label: 'Recalculate',
-                      onTap: () =>
-                          Navigator.pushNamed(context, "gender_screen"),
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const GenderScreen()),
+                        );
+                      },
                     ),
                     _buildActionButton(
                       icon: Icons.save_alt,
                       label: 'Save',
-                      onTap: () async {
-                        // Check for internet connectivity
-                        if (_connectivityResult == ConnectivityResult.none) {
-                          _showNoInternetDialog();
-                        } else {
-                          _rewardedAdManager.showAd(() {
-                            _saveResult(bmi, bmiText, bmiInterpretation, gender,
-                                height, weight);
-                          });
-                        }
-                      },
+                      onTap: () => _handleSaveButton(
+                        bmi,
+                        bmiText,
+                        bmiInterpretation,
+                        gender,
+                        height,
+                        weight,
+                      ),
                     ),
                     _buildActionButton(
                       icon: Icons.history,
@@ -285,7 +361,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.h),
               ],
             ),
           ),
@@ -396,43 +472,6 @@ class _ResultScreenState extends State<ResultScreen> {
     return (clampedBMI - minBMI) / range;
   }
 
-  Future<void> _saveResult(double bmi, String bmiText, String interpretation,
-      String gender, double height, double weight) async {
-    final prefs = await SharedPreferences.getInstance();
-    final result = {
-      'date': DateTime.now().toIso8601String(),
-      'bmi': bmi,
-      'status': bmiText,
-      'interpretation': interpretation,
-      'gender': gender,
-      'height': height,
-      'weight': weight,
-    };
-
-    // Get existing results or initialize empty list
-    List<String> savedResults = prefs.getStringList('bmi_results') ?? [];
-    savedResults.add(jsonEncode(result));
-
-    // Save updated list
-    try {
-      await prefs.setStringList('bmi_results', savedResults);
-    } catch (e) {
-      print('Error saving BMI result: $e');
-    }
-
-    // Show success message
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('BMI result saved successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-
-    print('Saving result: $result');
-  }
-
   Future<void> _shareResult(double bmi, String bmiText, String interpretation,
       double height, double weight) async {
     final String shareText = '''
@@ -462,7 +501,7 @@ Calculated using BMI Health Checker App
         Container(
           decoration: BoxDecoration(
             color: isPrimary ? Colors.blue : Colors.grey[850],
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
             boxShadow: isPrimary
                 ? [
                     BoxShadow(
@@ -474,21 +513,103 @@ Calculated using BMI Health Checker App
                 : null,
           ),
           child: IconButton(
-            icon: Icon(icon, color: Colors.white),
+            icon: Icon(icon, color: Colors.white, size: 28.r),
             onPressed: onTap,
-            iconSize: 28,
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.r),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Text(
           label,
           style: TextStyle(
             color: isPrimary ? Colors.blue : Colors.grey,
-            fontSize: 12,
+            fontSize: 12.sp,
           ),
         ),
       ],
+    );
+  }
+
+  void _showRewardAdFailedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[400],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Ad Failed to Load',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Unable to load the reward ad. This might be due to network issues or you are using ads blocker or private dns.You will need to watch ads to access this feature Please try again later.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    minimumSize: const Size(double.infinity, 45),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

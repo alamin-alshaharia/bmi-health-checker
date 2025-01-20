@@ -1,42 +1,66 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
-import '../widget/ad_widget.dart';
 import 'ad_constants.dart';
 
 class BannerAdManager {
-  late BannerAd _bannerAd;
+  final Map<String, BannerAd> _bannerAds = {};
+  final Set<String> _loadingAds = {};
+  bool _isDisposed = false;
 
-  BannerAdManager() {
-    _loadBannerAd(AdConstants.bannerAdUnitId);
-  }
+  void _loadBannerAd(String screenId) {
+    if (_loadingAds.contains(screenId) || _isDisposed) return;
+    _loadingAds.add(screenId);
 
-  void _loadBannerAd(String adUnitId) {
-    _bannerAd = BannerAd(
-      adUnitId: adUnitId,
-      request: AdRequest(),
+    _bannerAds[screenId]?.dispose();
+
+    final bannerAd = BannerAd(
+      adUnitId: AdConstants.bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (_) {
-          print('BannerAd loaded successfully');
+          _loadingAds.remove(screenId);
         },
         onAdFailedToLoad: (ad, error) {
+          _loadingAds.remove(screenId);
           ad.dispose();
-          print('BannerAd failed to load: $error');
+          _bannerAds.remove(screenId);
+
+          if (!_isDisposed) {
+            Future.delayed(
+                const Duration(seconds: 30), () => _loadBannerAd(screenId));
+          }
         },
       ),
-      size: AdSize.banner,
-    )..load();
+    );
+
+    _bannerAds[screenId] = bannerAd;
+    bannerAd.load();
   }
 
-  Widget getAdWidget() {
-    return CustomAdWidget(ad: _bannerAd);
-  }
+  Widget getAdWidget(String screenId) {
+    if (!_bannerAds.containsKey(screenId)) {
+      _loadBannerAd(screenId);
+    }
 
-  void refreshAd() {
-    _bannerAd.dispose();
-    _loadBannerAd(AdConstants.bannerAdUnitId);
+    final bannerAd = _bannerAds[screenId];
+    if (_isDisposed || bannerAd == null) {
+      return const SizedBox(height: 50);
+    }
+
+    return SizedBox(
+      width: bannerAd.size.width.toDouble(),
+      height: bannerAd.size.height.toDouble(),
+      child: AdWidget(ad: bannerAd),
+    );
   }
 
   void dispose() {
-    _bannerAd.dispose();
+    _isDisposed = true;
+    for (final ad in _bannerAds.values) {
+      ad.dispose();
+    }
+    _bannerAds.clear();
+    _loadingAds.clear();
   }
 }

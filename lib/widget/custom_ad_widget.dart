@@ -14,21 +14,8 @@ class CustomAdWidget extends StatefulWidget {
 }
 
 class _CustomAdWidgetState extends State<CustomAdWidget> {
-  bool _isAdLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.ad.load();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      width: widget.ad.size.width.toDouble(),
-      height: widget.ad.size.height.toDouble(),
-      child: AdWidget(ad: widget.ad),
-    );
+    return AdWidget(ad: widget.ad);
   }
 }

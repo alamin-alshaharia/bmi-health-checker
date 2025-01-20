@@ -1,240 +1,438 @@
 import 'package:flutter/material.dart';
 import 'package:wheel_slider/wheel_slider.dart';
 import 'package:bmi_health_checker/ads/banner_ad_manager.dart'; // Import the BannerAdManager
-import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+
+import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 
 import '../constant/color/color.dart';
 import '../constant/text_style.dart';
 import '../widget/button.dart';
 import '../widget/custom_box.dart';
-import '../widget/input_alert.dart'; // Import the InputAlertDialog
 
-class HeightScreen extends StatefulWidget {
+import '../widget/custom_drawer.dart';
+
+import '../widget/arrow_painter.dart';
+import '../utils/tooltip_manager.dart';
+import '../widget/custom_dropdown.dart';
+import '../widget/height_input_dialog.dart';
+import '../utils/preferences_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/bmi_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class HeightScreen extends ConsumerStatefulWidget {
   const HeightScreen({super.key});
 
   @override
-  State<HeightScreen> createState() => _HeightScreenState();
+  ConsumerState<HeightScreen> createState() => _HeightScreenState();
 }
 
-class _HeightScreenState extends State<HeightScreen> {
+class _HeightScreenState extends ConsumerState<HeightScreen>
+    with WidgetsBindingObserver {
   String selectedMenu = "Feet";
+  final _totalCount = 5000;
+  // final double _initValue = 152.4;
+  double height = 152.4;
 
-  final _totalCount = 3000;
-  final double _initValue = 4.5;
-  double height = 4.5;
-  double interval = 0.001;
-  late BannerAdManager _bannerAdManager; // Use BannerAdManager
+  double get interval {
+    switch (selectedMenu) {
+      case "Feet":
+        return 0.1;
+      case "Inch":
+        return 0.5;
+      case "Meter":
+        return 0.01;
+      case "Cm":
+        return 1.0;
+      default:
+        return 0.1;
+    }
+  }
+
+  double get _sliderValue {
+    switch (selectedMenu) {
+      case "Feet":
+        return height / 30.48;
+      case "Inch":
+        return height / 2.54;
+      case "Meter":
+        return height / 100;
+      case "Cm":
+        return height;
+      default:
+        return height;
+    }
+  }
+
+  void _onWheelSliderValueChanged(dynamic val) {
+    if (val == null) return;
+
+    setState(() {
+      final doubleValue = val is int ? val.toDouble() : val as double;
+      switch (selectedMenu) {
+        case "Feet":
+          height = doubleValue * 30.48;
+          break;
+        case "Inch":
+          height = doubleValue * 2.54;
+          break;
+        case "Meter":
+          height = doubleValue * 100;
+          break;
+        case "Cm":
+          height = doubleValue;
+          break;
+      }
+    });
+    // Update provider
+    ref.read(bmiProvider.notifier).updateHeight(height);
+  }
+
+  late BannerAdManager _bannerAdManager;
+  final GlobalKey<SliderDrawerState> _sliderDrawerKey =
+      GlobalKey<SliderDrawerState>();
+  bool _showTooltip = false;
+  OverlayEntry? _overlayEntry;
+  final GlobalKey _heightValueKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _bannerAdManager = BannerAdManager(); // Initialize the BannerAdManager
+    WidgetsBinding.instance.addObserver(this);
+    _bannerAdManager = BannerAdManager();
+    _initializeScreen();
+  }
+
+  Future<void> _initializeScreen() async {
+    if (mounted) {
+      await _checkFirstTime();
+      _loadSavedValues();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _saveValues();
+    }
+  }
+
+  Future<void> _saveValues() async {
+    // Save current values to preferences
+  }
+
+  void _loadSavedValues() {
+    // Load saved values from preferences
+  }
+
+  Future<void> _checkFirstTime() async {
+    if (await PreferencesManager.isFirstTime(
+        PreferencesManager.keyHeightTooltip)) {
+      setState(() {
+        _showTooltip = true;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showOverlayTooltip();
+      });
+
+      await PreferencesManager.markTooltipShown(
+          PreferencesManager.keyHeightTooltip);
+    }
+  }
+
+  void _showOverlayTooltip() {
+    if (_overlayEntry != null) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        final RenderBox? renderBox =
+            _heightValueKey.currentContext?.findRenderObject() as RenderBox?;
+        if (renderBox == null) return const SizedBox.shrink();
+
+        final position = renderBox.localToGlobal(Offset.zero);
+
+        return Positioned(
+          top: position.dy - 80,
+          left: position.dx - 40,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: kActiveColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Click here to input value manually',
+                        style: TextStyle(color: Colors.black, fontSize: 14),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.close,
+                            size: 16, color: Colors.black),
+                        onPressed: () {
+                          _overlayEntry?.remove();
+                          _overlayEntry = null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                CustomPaint(
+                  size: const Size(20, 10),
+                  painter: ArrowPainter(color: kActiveColor),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    TooltipManager.showTooltip(_overlayEntry!);
+    if (mounted && context.mounted) {
+      Overlay.of(context).insert(_overlayEntry!);
+    }
+  }
+
+  void _updateSelectedMenu(String? newValue) {
+    if (newValue == null || newValue == selectedMenu) return;
+    setState(() {
+      selectedMenu = newValue;
+    });
+  }
+
+  String get displayHeight {
+    switch (selectedMenu) {
+      case "Feet":
+        double totalFeet = height / 30.48;
+        return totalFeet.toStringAsFixed(2);
+      case "Inch":
+        return (height / 2.54).toStringAsFixed(2);
+      case "Meter":
+        return (height / 100).toStringAsFixed(2);
+      case "Cm":
+        return height.toStringAsFixed(2);
+      default:
+        return height.toStringAsFixed(2);
+    }
+  }
+
+  void _showHeightInputDialog() {
+    HeightInputDialog.showHeightInputDialog(
+      context,
+      height, // Pass the height in cm
+      (newValue) {
+        setState(() {
+          height = newValue; // newValue is already in cm
+        });
+        ref.read(bmiProvider.notifier).updateHeight(height); // Update provider
+      },
+      selectedMenu,
+    );
+  }
+
+  void _updateHeight(dynamic value) {
+    setState(() {
+      switch (selectedMenu) {
+        case "Feet":
+          height = value * 30.48;
+          break;
+        case "Inch":
+          height = value * 2.54;
+          break;
+        case "Meter":
+          height = value * 100;
+          break;
+        case "Cm":
+          height = value;
+          break;
+      }
+    });
+    ref.read(bmiProvider.notifier).updateHeight(height);
+  }
+
+  void _navigateToNext(String gender) {
+    Navigator.pushNamed(context, "weight_screen", arguments: {
+      "height": height,
+      "gender": gender,
+    });
   }
 
   @override
   void dispose() {
-    _bannerAdManager.dispose(); // Dispose of the BannerAdManager
+    WidgetsBinding.instance.removeObserver(this);
+    TooltipManager.hideTooltip();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _bannerAdManager.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color background = kInactiveColor;
-    final Color fill = kScaleColor;
+    final arguments = (ModalRoute.of(context)?.settings.arguments ??
+        <String, dynamic>{}) as Map;
+    String gender = arguments["gender"] ?? "Not specified";
+
+    const Color background = kInactiveColor;
+    const Color fill = kScaleColor;
     final List<Color> gradient = [
       background,
       background,
       fill,
       fill,
     ];
-    final double fillPercent = 1; // fills 56.23% for container from bottom
-    final double fillStop = (100 - fillPercent) / 100;
+    const double fillPercent = 1;
+    const double fillStop = (100 - fillPercent) / 100;
     final List<double> stops = [0.0, fillStop, fillStop, 1.0];
-    return SafeArea(
-      child: Scaffold(
-          backgroundColor: kBacgroundColor,
-          body: SingleChildScrollView(
-            child: Column(children: [
-              const Padding(
-                padding: EdgeInsets.all(17.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      Icons.notes_outlined,
-                      color: kActiveColor,
-                      size: 40,
-                    ),
-                    Icon(
-                      Icons.apps,
-                      color: kActiveColor,
-                      size: 40,
-                    )
-                  ],
-                ),
+
+    return Scaffold(
+      backgroundColor: kBacgroundColor,
+      body: SafeArea(
+        child: SliderDrawer(
+          appBar: SliderAppBar(
+            drawerIconColor: kActiveColor,
+            drawerIconSize: 35.r,
+            appBarPadding: EdgeInsets.fromLTRB(10.r, 20.r, 20.r, 10.r),
+            appBarColor: kBacgroundColor,
+            title: Container(),
+          ),
+          key: _sliderDrawerKey,
+          slideDirection: SlideDirection.LEFT_TO_RIGHT,
+          isDraggable: true,
+          sliderOpenSize: MediaQuery.of(context).size.width * 0.75,
+          slider: Container(
+            decoration: BoxDecoration(
+              color: kInactiveColor,
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(20.r),
+                bottomRight: Radius.circular(20.r),
               ),
-              Row(
+            ),
+            child: const CustomDrawer(),
+          ),
+          child: Scaffold(
+            backgroundColor: kBacgroundColor,
+            body: SingleChildScrollView(
+              child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 35),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 90),
-                        Text(
-                          'Select Height ',
-                          style: buildTextStyle(
-                              weight: FontWeight.w300, fontSize: 27),
-                        ),
-                        const SizedBox(height: 10),
-                        GestureDetector(
-                          onTap: () {
-                            InputAlertDialog.showHeightInputDialog(
-                                context, height, (newHeight) {
-                              setState(() {
-                                height = newHeight; // Update height
-                              });
-                            });
-                          },
-                          child: Text(
-                            height.toStringAsFixed(2),
-                            style: buildTextStyle(
-                              weight: FontWeight.bold,
-                              fontSize: 80,
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 35.w),
+                        child: Column(
+                          children: [
+                            SizedBox(height: 90.h),
+                            Text(
+                              'Select Height ',
+                              style: buildTextStyle(
+                                weight: FontWeight.w500,
+                                fontSize: 27.sp,
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Container(
-                          alignment: Alignment.center,
-                          height: 60,
-                          width: 140,
-                          decoration: BoxDecoration(
-                            color: kInactiveColor,
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(50),
-                            ),
-                          ),
-                          child: DropdownButton<String>(
-                              dropdownColor: kInactiveColor,
-                              alignment: Alignment.center,
-                              value: selectedMenu,
-                              items: [
-                                DropdownMenuItem(
-                                  child: Text(
-                                    "Feet",
-                                    style: buildTextStyle(
-                                        weight: FontWeight.w500, fontSize: 15),
-                                  ),
-                                  value: 'Feet',
-                                ),
-                                DropdownMenuItem(
-                                  child: Text(
-                                    'Inch',
-                                    style: buildTextStyle(
-                                        weight: FontWeight.w500, fontSize: 15),
-                                  ),
-                                  value: 'Inch',
-                                ),
-                                DropdownMenuItem(
-                                  child: Text(
-                                    'M',
-                                    style: buildTextStyle(
-                                        weight: FontWeight.w500, fontSize: 15),
-                                  ),
-                                  value: 'Cm',
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedMenu = value!;
-                                });
-                              }),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 31, top: 35),
-                    child: RotatedBox(
-                      quarterTurns: 3,
-                      child: Container(
-                        height: 102,
-                        width: 550,
-                        decoration: BoxDecoration(
-                            color: kInactiveColor,
-                            gradient: LinearGradient(
-                              colors: gradient,
-                              stops: stops,
-                              end: Alignment.center,
-                              begin: Alignment.centerLeft,
-                            ),
-                            borderRadius: BorderRadius.circular(30)),
-                        child: Center(
-                          child: CustomBox(
-                            wheelSlider: WheelSlider(
-                              lineColor: kActiveColor,
-                              horizontalListWidth: 490,
-                              horizontalListHeight: 500,
-                              interval: interval,
-                              totalCount: _totalCount,
-                              initValue: _initValue,
-                              onValueChanged: (val) {
-                                setState(() {
-                                  height = val;
-                                  print(height);
-                                });
+                            SizedBox(height: 10.h),
+                            GestureDetector(
+                              key: _heightValueKey,
+                              onTap: () {
+                                TooltipManager.hideTooltip();
+                                _showHeightInputDialog();
                               },
-                              hapticFeedbackType: HapticFeedbackType.vibrate,
-                              pointerColor: Colors.blueAccent,
+                              child: Text(
+                                displayHeight,
+                                style: buildTextStyle(
+                                  weight: FontWeight.bold,
+                                  fontSize: 60.sp,
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(height: 10.h),
+                            CustomDropdown(
+                              value: selectedMenu,
+                              items: const ['Feet', 'Inch', 'Meter', 'Cm'],
+                              onChanged: _updateSelectedMenu,
+                              width: MediaQuery.of(context).size.width * 0.35,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  )
+                      Padding(
+                        padding: EdgeInsets.only(left: 31.w, top: 35.h),
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Container(
+                            height: 102.h,
+                            width: 550.w,
+                            decoration: BoxDecoration(
+                              color: kInactiveColor,
+                              gradient: LinearGradient(
+                                colors: gradient,
+                                stops: stops,
+                                end: Alignment.center,
+                                begin: Alignment.centerLeft,
+                              ),
+                              borderRadius: BorderRadius.circular(30.r),
+                            ),
+                            child: Center(
+                              child: CustomBox(
+                                wheelSlider: WheelSlider(
+                                  lineColor: kActiveColor,
+                                  horizontalListWidth: 490.w,
+                                  horizontalListHeight: 500.h,
+                                  interval: interval,
+                                  totalCount: _totalCount,
+                                  initValue: _sliderValue,
+                                  onValueChanged: _onWheelSliderValueChanged,
+                                  hapticFeedbackType:
+                                      HapticFeedbackType.vibrate,
+                                  pointerColor: Colors.blueAccent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 37.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Button(
+                        label: "Prev",
+                        color: kActiveColor,
+                        textColor: Colors.black,
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      Button(
+                        label: "Next",
+                        color: kActiveColor,
+                        textColor: Colors.black,
+                        onPressed: () {
+                          _navigateToNext(gender);
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20.h),
+                  _bannerAdManager.getAdWidget(context.toString()),
                 ],
               ),
-              const SizedBox(
-                height: 37,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Button(
-                    label: "Prev",
-                    color: kActiveColor,
-                    textColor: Colors.black,
-                    onPressed: () {
-                      _bannerAdManager.refreshAd(); // Refresh the ad
-                      Navigator.pushNamed(context, "gender_screen");
-                    },
-                  ),
-                  Button(
-                    label: "Next",
-                    color: kActiveColor,
-                    textColor: Colors.black,
-                    onPressed: () {
-                      _bannerAdManager.refreshAd(); // Refresh the ad
-                      Navigator.pushNamed(context, "weight_screen", arguments: {
-                        "height": (selectedMenu == "Inch"
-                                ? height * 2.54
-                                : selectedMenu == "Feet"
-                                    ? height * 30.48
-                                    : height * 100)
-                            .toDouble(),
-                      });
-                    },
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              _bannerAdManager.getAdWidget(), // Display the ad widget
-            ]),
-          )),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

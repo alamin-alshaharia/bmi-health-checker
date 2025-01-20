@@ -1,8 +1,16 @@
-
-import"package:flutter/material.dart";
+import "package:flutter/material.dart";
 
 import "color/color.dart";
-TextStyle buildTextStyle({required FontWeight weight,required double fontSize}) {
+
+TextStyle buildTextStyle({
+  required double fontSize,
+  required FontWeight weight,
+  Color? color,
+}) {
   return TextStyle(
-      fontWeight: weight, color: kActiveColor, fontSize: fontSize,);
+    fontSize: fontSize,
+    fontWeight: weight,
+    fontFamily: "Poppins",
+    color: color ?? kActiveColor,
+  );
 }

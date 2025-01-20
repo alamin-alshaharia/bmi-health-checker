@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:bmi_health_checker/ads/interstitial_ad_manager.dart';
+// import 'package:bmi_health_checker/ads/interstitial_ad_manager.dart';
 import 'package:bmi_health_checker/ads/ad_constants.dart'; // Import AdConstants
 
 class InterstitialAdWidget extends StatefulWidget {
   final Widget child;
 
-  const InterstitialAdWidget({Key? key, required this.child}) : super(key: key);
+  const InterstitialAdWidget({super.key, required this.child});
 
   @override
   _InterstitialAdWidgetState createState() => _InterstitialAdWidgetState();
@@ -34,7 +34,7 @@ class _InterstitialAdWidgetState extends State<InterstitialAdWidget> {
           _showInterstitialAd();
         },
         onAdFailedToLoad: (LoadAdError error) {
-          print('InterstitialAd failed to load: $error');
+          // print('InterstitialAd failed to load: $error');
         },
       ),
     );
@@ -45,14 +45,14 @@ class _InterstitialAdWidgetState extends State<InterstitialAdWidget> {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (InterstitialAd ad) {
           _isAdShown = true;
-          print('InterstitialAd shown.');
+          // print('InterstitialAd shown.');
         },
         onAdDismissedFullScreenContent: (InterstitialAd ad) {
           ad.dispose();
           _loadInterstitialAd(); // Load a new ad for next time
         },
         onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
-          print('InterstitialAd failed to show: $error');
+          // print('InterstitialAd failed to show: $error');
           ad.dispose();
           _loadInterstitialAd(); // Load a new ad for next time
         },

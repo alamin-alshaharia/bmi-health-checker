@@ -3,6 +3,7 @@ import 'package:bmi_health_checker/ads/rewarded_ad_manager.dart';
 
 class RewardedAdWidget extends StatefulWidget {
   final Widget child;
+  @override
   final GlobalKey<RewardedAdWidgetState> key;
 
   const RewardedAdWidget({required this.child, required this.key})
@@ -40,7 +41,7 @@ class RewardedAdWidgetState extends State<RewardedAdWidget> {
       onTap: () {
         loadAndShowAd(() {
           // Define what happens when the user earns a reward
-          print('User earned a reward!');
+          // print('User earned a reward!');
           // You can add your logic here, e.g., saving the result
         });
       },
