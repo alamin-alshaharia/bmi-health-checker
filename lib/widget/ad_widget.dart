@@ -14,7 +14,7 @@ class CustomAdWidget extends StatefulWidget {
 }
 
 class _CustomAdWidgetState extends State<CustomAdWidget> {
-  bool _isAdLoaded = false;
+  final bool _isAdLoaded = false;
 
   @override
   void initState() {

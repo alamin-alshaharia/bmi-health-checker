@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/bmi_state.dart';
-import '../Calculator.dart';
+import '../calculator.dart';
 
 final bmiProvider = StateNotifierProvider<BmiNotifier, BmiState>((ref) {
   return BmiNotifier();

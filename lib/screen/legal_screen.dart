@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bmi_health_checker/constant/legal_constants.dart';
 import 'package:bmi_health_checker/constant/color/color.dart';
 import 'package:bmi_health_checker/constant/text_style.dart';
 

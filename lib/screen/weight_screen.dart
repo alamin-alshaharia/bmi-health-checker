@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bmi_health_checker/ads/banner_ad_manager.dart';
 
-import '../Calculator.dart';
+import '../calculator.dart';
 import '../constant/color/color.dart';
 import '../constant/text_style.dart';
 import '../widget/button.dart';

@@ -19,12 +19,15 @@ class Calculator {
   }
 
   String bmiInterpretation() {
-    if (_bmi < 18.5)
+    if (_bmi < 18.5) {
       return "You're capable of amazing things! Your BMI is lower than ideal, but you can make changes to improve your health. Keep pushing forward!";
-    if (_bmi < 25)
+    }
+    if (_bmi < 25) {
       return "You're doing amazing! Your BMI is within the normal range, indicating a healthy weight for your height. Keep pushing yourself to new heights!";
-    if (_bmi < 30)
+    }
+    if (_bmi < 30) {
       return "You're getting there! Your BMI is slightly above normal, but you're on the right track. Keep pushing yourself to reach your goals!";
+    }
     return "You're not alone! Many people struggle with weight, but you're taking the first step towards a healthier you. Keep pushing forward!";
   }
 

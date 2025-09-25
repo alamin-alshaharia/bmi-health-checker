@@ -15,7 +15,6 @@ import 'package:flutter/services.dart';
 
 import 'package:bmi_health_checker/utils/tooltip_manager.dart';
 import 'package:bmi_health_checker/utils/preferences_manager.dart';
-import 'package:bmi_health_checker/ads/ad_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bmi_health_checker/widget/consent_dialog.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -145,7 +144,7 @@ class OptimizedChild extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
       child: child,
     );
   }

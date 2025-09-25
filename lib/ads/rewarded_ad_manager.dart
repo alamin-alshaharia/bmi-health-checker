@@ -1,27 +1,61 @@
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'ad_constants.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+import 'ad_constants.dart';
 
 class RewardedAdManager {
   RewardedAd? _rewardedAd;
   bool _isLoading = false;
+  bool _usingFallback = false;
+  int _loadAttempts = 0;
 
   RewardedAdManager() {
     _loadRewardedAd();
   }
 
-  void _loadRewardedAd() {
+  void _loadRewardedAd({bool useFallback = false}) {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    final adUnitId = useFallback
+        ? AdConstants.fallbackRewardedAdUnitId
+        : AdConstants.rewardedAdUnitId;
+
     RewardedAd.load(
-      adUnitId: AdConstants.rewardedAdUnitId,
+      adUnitId: adUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
           _rewardedAd = ad;
-          // print('RewardedAd loaded successfully');
+          _isLoading = false;
+          _usingFallback = useFallback;
+          _loadAttempts = 0;
+          if (useFallback) {
+            print('Fallback rewarded ad loaded successfully');
+          }
           _setRewardedAdCallbacks(ad);
         },
         onAdFailedToLoad: (LoadAdError error) {
-          // print('RewardedAd failed to load: $error');
+          _isLoading = false;
+          _loadAttempts++;
+          print('RewardedAd failed to load (attempt $_loadAttempts): $error');
+
+          if (!useFallback && _loadAttempts < 3) {
+            // Try fallback ad when primary fails
+            print('Trying fallback rewarded ad');
+            Future.delayed(const Duration(seconds: 2),
+                () => _loadRewardedAd(useFallback: true));
+          } else if (useFallback && _loadAttempts < 5) {
+            // Retry primary after fallback fails
+            print('Fallback also failed, retrying primary rewarded ad');
+            Future.delayed(const Duration(seconds: 5),
+                () => _loadRewardedAd(useFallback: false));
+          } else {
+            // Reset attempts and try again later
+            _loadAttempts = 0;
+            Future.delayed(const Duration(seconds: 30),
+                () => _loadRewardedAd(useFallback: false));
+          }
         },
       ),
     );
@@ -46,8 +80,14 @@ class RewardedAdManager {
 
   void showAd(VoidCallback onRewarded, {VoidCallback? onAdFailedToLoad}) {
     if (_rewardedAd == null) {
+      // Try to load an ad immediately if none is available
+      _loadRewardedAd();
       onAdFailedToLoad?.call();
       return;
+    }
+
+    if (_usingFallback) {
+      print('Showing fallback rewarded ad');
     }
 
     _rewardedAd!.show(
@@ -62,23 +102,6 @@ class RewardedAdManager {
   }
 
   void loadAd() {
-    if (_isLoading) return;
-    _isLoading = true;
-
-    RewardedAd.load(
-      adUnitId: AdConstants.rewardedAdUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          _rewardedAd = ad;
-          _isLoading = false;
-        },
-        onAdFailedToLoad: (error) {
-          // print('Rewarded ad failed to load: $error');
-          _rewardedAd = null;
-          _isLoading = false;
-        },
-      ),
-    );
+    _loadRewardedAd();
   }
 }

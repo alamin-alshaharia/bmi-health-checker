@@ -1,7 +1,6 @@
 import 'package:bmi_health_checker/constant/color/color.dart';
 import 'package:bmi_health_checker/constant/enum_gender_file.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

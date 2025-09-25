@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:bmi_health_checker/widget/interstitial_ad_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Import connectivity package
 import '../ads/rewarded_ad_manager.dart';

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:bmi_health_checker/ads/banner_ad_manager.dart';
 import 'bmi_history_graph.dart'; // Import the new graph screen
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bmi_health_checker/providers/bmi_history_provider.dart';
