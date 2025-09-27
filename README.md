@@ -209,8 +209,13 @@ flutter test test/unit/calculator_test.dart
 5. Open a Pull Request
 
 ## 📄 License
+Copyright (c) 2025 Md. Alamin Al Shaharia. All rights reserved.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This code is provided for educational and reference purposes only. 
+While you may fork this repository on GitHub for personal study, 
+you may not use, copy, modify, or distribute the code without permission.
+
+**This project is not licensed under any open source license.**.
 
 ## 📞 Contact
 
